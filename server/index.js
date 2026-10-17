@@ -177,6 +177,41 @@ app.get('/api/export', (_req, res) => {
   res.json(items);
 });
 
+app.get('/api/export/csv', (req, res) => {
+  const { q = '', stage = '', role = '', sort = 'created_at', order = 'desc' } = req.query;
+  const where = [];
+  const params = {};
+  if (q.trim()) {
+    where.push('(name LIKE @q OR email LIKE @q OR skills LIKE @q OR role LIKE @q)');
+    params.q = `%${q.trim()}%`;
+  }
+  if (stage && STAGES.includes(stage)) { where.push('stage = @stage'); params.stage = stage; }
+  if (role) { where.push('role = @role'); params.role = role; }
+  const w = where.length ? `WHERE ${where.join(' AND ')}` : '';
+  const col = SORTS[sort] || SORTS.created_at;
+  const dir = String(order).toLowerCase() === 'asc' ? 'ASC' : 'DESC';
+
+  const items = db.prepare(`SELECT id, name, email, phone, role, skills, experience, rating, stage, created_at FROM candidates ${w} ORDER BY ${col} ${dir}, id DESC`).all(params);
+  const headers = ['ID', 'Name', 'Email', 'Phone', 'Role', 'Skills', 'Experience (Yrs)', 'Rating', 'Stage', 'Applied At'];
+  const rows = items.map(c => [
+    c.id,
+    `"${(c.name || '').replace(/"/g, '""')}"`,
+    `"${(c.email || '').replace(/"/g, '""')}"`,
+    `"${(c.phone || '').replace(/"/g, '""')}"`,
+    `"${(c.role || '').replace(/"/g, '""')}"`,
+    `"${(c.skills || '').replace(/"/g, '""')}"`,
+    c.experience || 0,
+    c.rating || 4,
+    c.stage,
+    c.created_at
+  ]);
+  const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\r\n');
+  const filename = `candidates_${new Date().toISOString().slice(0, 10)}.csv`;
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  res.send(csvContent);
+});
+
 app.post('/api/seed/reset', (_req, res) => {
   db.transaction(() => {
     db.prepare('DELETE FROM stage_history').run();

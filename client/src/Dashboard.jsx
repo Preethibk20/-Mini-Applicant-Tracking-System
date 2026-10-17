@@ -7,171 +7,84 @@ export default function Dashboard({ version, onOpen, onSwitchTab }) {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    api.dashboard()
-      .then(setData)
-      .catch((e) => setError(e.message));
+    api.dashboard().then(setData).catch(e => setError(e.message));
   }, [version]);
 
-  if (error) {
-    return (
-      <div className="panel" style={{ borderColor: 'var(--danger-border)' }}>
-        <h2 style={{ color: 'var(--danger)' }}>Could not load dashboard</h2>
-        <p className="muted">{error}</p>
-      </div>
-    );
-  }
+  if (error) return (
+    <div className="notice notice-error" style={{ marginTop: 24 }}>
+      Could not load dashboard: {error}
+    </div>
+  );
 
-  if (!data) {
-    return (
-      <div className="panel" style={{ textAlign: 'center', padding: '60px 20px' }}>
-        <p className="muted">Loading recruitment metrics & analytics…</p>
-      </div>
-    );
-  }
+  if (!data) return (
+    <div style={{ padding: '60px 0', textAlign: 'center', color: 'var(--text-3)', fontSize: 13 }}>
+      Loading…
+    </div>
+  );
 
-  const maxStage = Math.max(1, ...data.byStage.map((s) => s.count));
-  const maxDay = Math.max(1, ...data.last7Days.map((s) => s.count));
+  const maxStage = Math.max(1, ...data.byStage.map(s => s.count));
+  const maxDay   = Math.max(1, ...data.last7Days.map(s => s.count));
 
   const kpis = [
-    {
-      label: 'Total Applicants',
-      value: data.total,
-      hint: 'In database',
-      badge: 'All-time',
-      icon: (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-          <circle cx="9" cy="7" r="4" />
-          <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-          <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-        </svg>
-      )
-    },
-    {
-      label: 'Active Pipeline',
-      value: data.active,
-      hint: `${Math.round((data.active / (data.total || 1)) * 100)}% of total pool`,
-      badge: 'In Review',
-      icon: (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-        </svg>
-      )
-    },
-    {
-      label: 'Interview Rate',
-      value: `${data.interviewRate}%`,
-      hint: 'Reached interview or offer',
-      badge: 'High funnel',
-      icon: (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="12" cy="12" r="10" />
-          <polyline points="12 6 12 12 16 14" />
-        </svg>
-      )
-    },
-    {
-      label: 'Hire Conversion',
-      value: `${data.conversionRate}%`,
-      hint: `${data.hired} successful hires`,
-      badge: 'Goal: >4%',
-      icon: (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-          <polyline points="22 4 12 14.01 9 11.01" />
-        </svg>
-      )
-    },
-    {
-      label: 'New This Week',
-      value: data.newThisWeek,
-      hint: 'Last 7 days volume',
-      badge: '+Active',
-      icon: (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-          <line x1="16" y1="2" x2="16" y2="6" />
-          <line x1="8" y1="2" x2="8" y2="6" />
-          <line x1="3" y1="10" x2="21" y2="10" />
-        </svg>
-      )
-    }
+    { label: 'Total Applicants',  value: data.total,            foot: 'all time' },
+    { label: 'Active Pipeline',   value: data.active,           foot: `${Math.round(data.active / (data.total||1) * 100)}% of pool` },
+    { label: 'Interview Rate',    value: `${data.interviewRate}%`, foot: 'reached interview or offer', badge: data.interviewRate > 30 ? 'On track' : null },
+    { label: 'Hire Conversion',   value: `${data.conversionRate}%`, foot: `${data.hired} successful hires` },
+    { label: 'New This Week',     value: data.newThisWeek,      foot: 'last 7 days' },
   ];
 
   return (
     <div>
-      {/* Hero Welcome Banner */}
-      <section className="dashboard-hero">
-        <div>
-          <h1 className="hero-title">Talent Acquisition Dashboard</h1>
-          <p className="hero-desc">
-            Monitor real-time pipeline velocity, stage conversions, and weekly candidate flow.
-          </p>
-        </div>
-        <div className="hero-stats-badge">
-          <span className="pill" style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', color: '#10B981', borderColor: 'rgba(16, 185, 129, 0.3)' }}>
-            <span className="pill-dot" /> Live Pipeline
-          </span>
-          <button className="btn btn-ghost" onClick={() => onSwitchTab('board')} style={{ padding: '4px 10px', fontSize: '0.82rem' }}>
-            Open Kanban →
-          </button>
-        </div>
-      </section>
+      {/* Plain page header */}
+      <div className="page-header">
+        <h1 className="page-title">Overview</h1>
+        <p className="page-desc">Hiring pipeline metrics and recent activity</p>
+      </div>
 
-      {/* 5 KPI Metric Cards */}
-      <section className="kpi-grid">
-        {kpis.map((kpi) => (
-          <div className="kpi-card" key={kpi.label}>
-            <div className="kpi-head">
-              <span className="kpi-label">{kpi.label}</span>
-              <div className="kpi-icon">{kpi.icon}</div>
-            </div>
-            <div className="kpi-value">{kpi.value}</div>
+      {/* KPI strip */}
+      <div className="kpi-grid">
+        {kpis.map(k => (
+          <div className="kpi-card" key={k.label}>
+            <div className="kpi-label">{k.label}</div>
+            <div className="kpi-value">{k.value}</div>
             <div className="kpi-footer">
-              <span className="kpi-badge">{kpi.badge}</span>
-              <span>· {kpi.hint}</span>
+              {k.badge && <span className="kpi-badge">{k.badge} ·</span>}
+              {k.foot}
             </div>
           </div>
         ))}
-      </section>
+      </div>
 
-      {/* Analytics Grid: Funnel & 7-Day Intake */}
+      {/* Charts row */}
       <div className="analytics-grid">
-        {/* Pipeline Funnel */}
+        {/* Pipeline funnel */}
         <section className="panel">
           <div className="panel-head">
             <div>
-              <h2 className="panel-title">Pipeline Funnel by Stage</h2>
-              <p className="panel-subtitle">Distribution of candidates across hiring milestones</p>
+              <div className="panel-title">Pipeline by stage</div>
+              <div className="panel-subtitle">Candidate distribution across milestones</div>
             </div>
-            <button className="btn btn-ghost" style={{ fontSize: '0.82rem', padding: '4px 8px' }} onClick={() => onSwitchTab('board')}>
-              View Board →
+            <button className="btn btn-ghost" style={{ fontSize: 12, height: 28, padding: '0 8px' }}
+              onClick={() => onSwitchTab('board')}>
+              View board →
             </button>
           </div>
-
           <div className="funnel-list">
-            {data.byStage.map((s) => {
-              const cfg = STAGE_CONFIG[s.stage] || { color: '#6366F1' };
-              const pct = data.total ? Math.round((s.count / data.total) * 100) : 0;
+            {data.byStage.map(s => {
+              const cfg = STAGE_CONFIG[s.stage] || {};
+              const pct = data.total ? Math.round(s.count / data.total * 100) : 0;
               return (
                 <div className="funnel-item" key={s.stage}>
                   <div className="funnel-meta">
                     <span className="funnel-stage-name">
-                      <span className="pill-dot" style={{ backgroundColor: cfg.color, color: cfg.color }} />
+                      <span style={{ width: 6, height: 6, borderRadius: '50%', background: cfg.color, display: 'inline-block' }} />
                       {s.stage}
                     </span>
-                    <span className="funnel-count">
-                      {s.count} <span style={{ color: 'var(--text-dim)', fontWeight: 400, fontSize: '0.8rem' }}>({pct}%)</span>
-                    </span>
+                    <span className="funnel-count">{s.count} <span style={{ color: 'var(--text-3)', fontWeight: 400 }}>({pct}%)</span></span>
                   </div>
                   <div className="funnel-track">
-                    <div
-                      className="funnel-fill"
-                      style={{
-                        width: `${Math.max(4, (s.count / maxStage) * 100)}%`,
-                        backgroundColor: cfg.color
-                      }}
-                    />
+                    <div className="funnel-fill"
+                      style={{ width: `${Math.max(2, s.count / maxStage * 100)}%`, background: cfg.color }} />
                   </div>
                 </div>
               );
@@ -179,31 +92,25 @@ export default function Dashboard({ version, onOpen, onSwitchTab }) {
           </div>
         </section>
 
-        {/* 7-Day Intake Histogram */}
+        {/* 7-day intake */}
         <section className="panel">
           <div className="panel-head">
             <div>
-              <h2 className="panel-title">Weekly Application Intake</h2>
-              <p className="panel-subtitle">Daily candidate acquisition volume (last 7 days)</p>
+              <div className="panel-title">Applications this week</div>
+              <div className="panel-subtitle">Daily intake over the last 7 days</div>
             </div>
-            <span className="pill" style={{ backgroundColor: 'rgba(99, 102, 241, 0.1)', color: 'var(--primary)' }}>
-              7 Days
-            </span>
           </div>
-
           <div className="spark-chart">
-            {data.last7Days.map((day) => {
-              const fillPct = maxDay ? Math.max(8, (day.count / maxDay) * 100) : 8;
-              const dateObj = new Date(day.date);
-              const weekday = dateObj.toLocaleDateString('en-US', { weekday: 'short' });
-              const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            {data.last7Days.map(day => {
+              const h = maxDay ? Math.max(6, day.count / maxDay * 100) : 6;
+              const wd = new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' });
               return (
-                <div className="spark-bar-wrap" key={day.date} title={`${formattedDate}: ${day.count} applicants`}>
-                  <span className="spark-count">{day.count}</span>
+                <div className="spark-bar-wrap" key={day.date} title={`${day.date}: ${day.count}`}>
+                  <span className="spark-count">{day.count || ''}</span>
                   <div className="spark-track">
-                    <div className="spark-fill" style={{ height: `${fillPct}%` }} />
+                    <div className="spark-fill" style={{ height: `${h}%` }} />
                   </div>
-                  <span className="spark-label">{weekday}</span>
+                  <span className="spark-label">{wd}</span>
                 </div>
               );
             })}
@@ -211,44 +118,40 @@ export default function Dashboard({ version, onOpen, onSwitchTab }) {
         </section>
       </div>
 
-      {/* Analytics Grid: Roles Demand & Live Activity Feed */}
+      {/* Bottom row */}
       <div className="analytics-grid">
-        {/* Roles Demand Breakdown */}
+        {/* Roles breakdown */}
         <section className="panel">
           <div className="panel-head">
             <div>
-              <h2 className="panel-title">Role & Position Breakdown</h2>
-              <p className="panel-subtitle">Candidate allocation and hiring rates per job title</p>
+              <div className="panel-title">Roles breakdown</div>
+              <div className="panel-subtitle">Candidate count and hires per position</div>
             </div>
-            <button className="btn btn-ghost" style={{ fontSize: '0.82rem', padding: '4px 8px' }} onClick={() => onSwitchTab('candidates')}>
+            <button className="btn btn-ghost" style={{ fontSize: 12, height: 28, padding: '0 8px' }}
+              onClick={() => onSwitchTab('candidates')}>
               Directory →
             </button>
           </div>
-
-          <table className="data-table" style={{ marginTop: '8px' }}>
+          <table className="data-table">
             <thead>
               <tr>
-                <th>Target Role</th>
+                <th>Role</th>
                 <th style={{ textAlign: 'center' }}>Total</th>
                 <th style={{ textAlign: 'center' }}>Hired</th>
                 <th style={{ textAlign: 'right' }}>Share</th>
               </tr>
             </thead>
             <tbody>
-              {data.byRole.map((r) => {
-                const share = data.total ? Math.round((r.total / data.total) * 100) : 0;
+              {data.byRole.map(r => {
+                const share = data.total ? Math.round(r.total / data.total * 100) : 0;
                 return (
                   <tr key={r.role}>
                     <td style={{ fontWeight: 600 }}>{r.role}</td>
-                    <td style={{ textAlign: 'center' }}>
-                      <span className="tab-badge">{r.total}</span>
+                    <td style={{ textAlign: 'center', color: 'var(--text-2)' }}>{r.total}</td>
+                    <td style={{ textAlign: 'center', color: r.hired ? 'var(--green)' : 'var(--text-3)', fontWeight: r.hired ? 600 : 400 }}>
+                      {r.hired || '—'}
                     </td>
-                    <td style={{ textAlign: 'center', color: r.hired ? 'var(--success)' : 'inherit', fontWeight: r.hired ? 700 : 400 }}>
-                      {r.hired}
-                    </td>
-                    <td style={{ textAlign: 'right' }}>
-                      <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>{share}%</span>
-                    </td>
+                    <td style={{ textAlign: 'right', color: 'var(--text-3)' }}>{share}%</td>
                   </tr>
                 );
               })}
@@ -256,26 +159,20 @@ export default function Dashboard({ version, onOpen, onSwitchTab }) {
           </table>
         </section>
 
-        {/* Live Stage Transition Activity Feed */}
+        {/* Activity feed */}
         <section className="panel">
           <div className="panel-head">
             <div>
-              <h2 className="panel-title">Recent Pipeline Activity</h2>
-              <p className="panel-subtitle">Real-time candidate progression and status changes</p>
+              <div className="panel-title">Recent activity</div>
+              <div className="panel-subtitle">Latest candidate stage changes</div>
             </div>
-            <span className="pill" style={{ backgroundColor: 'rgba(99, 102, 241, 0.1)', color: 'var(--primary)' }}>
-              Live
-            </span>
           </div>
-
           {data.recent.length === 0 ? (
-            <p className="muted" style={{ padding: '24px 0', textAlign: 'center' }}>
-              No stage movements logged yet.
-            </p>
+            <p style={{ color: 'var(--text-3)', fontSize: 12 }}>No activity yet.</p>
           ) : (
             <div className="feed-list">
-              {data.recent.slice(0, 6).map((r) => {
-                const toCfg = STAGE_CONFIG[r.to_stage] || { color: '#6366F1' };
+              {data.recent.slice(0, 6).map(r => {
+                const toCfg = STAGE_CONFIG[r.to_stage] || {};
                 return (
                   <div className="feed-item" key={r.id}>
                     <div className="avatar" style={{ background: getAvatarGradient(r.name) }}>
@@ -287,13 +184,13 @@ export default function Dashboard({ version, onOpen, onSwitchTab }) {
                       </button>{' '}
                       {r.from_stage ? (
                         <>
-                          <span style={{ color: 'var(--text-muted)' }}>moved to </span>
-                          <span className="pill" style={{ color: toCfg.color, borderColor: toCfg.border, backgroundColor: toCfg.bg, padding: '1px 8px', fontSize: '0.72rem' }}>
+                          <span>moved to </span>
+                          <span className="pill" style={{ color: toCfg.color, background: toCfg.bg, borderColor: toCfg.border }}>
                             {r.to_stage}
                           </span>
                         </>
                       ) : (
-                        <span style={{ color: 'var(--text-muted)' }}>applied for {r.role}</span>
+                        <span>applied for {r.role}</span>
                       )}
                     </div>
                     <span className="feed-time">{fmtTimeAgo(r.changed_at)}</span>

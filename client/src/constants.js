@@ -116,13 +116,103 @@ export function exportCandidatesToCSV(candidates, filename = 'candidates_export.
     c.stage,
     c.created_at
   ]);
-  const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+  const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\r\n');
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
+  const url = window.URL.createObjectURL(blob);
   const link = document.createElement('a');
-  link.setAttribute('href', url);
-  link.setAttribute('download', filename);
+  link.href = url;
+  link.download = filename;
+  link.style.display = 'none';
   document.body.appendChild(link);
   link.click();
-  document.body.removeChild(link);
+  setTimeout(() => {
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  }, 500);
 }
+
+export const ROLE_REQUIREMENTS = {
+  'Frontend Developer': ['React', 'TypeScript', 'JavaScript', 'CSS', 'HTML', 'Next.js', 'Redux', 'Tailwind', 'Git'],
+  'Backend Developer': ['Node.js', 'PostgreSQL', 'Express', 'Docker', 'REST', 'MongoDB', 'Redis', 'Python', 'SQL'],
+  'Full Stack Developer': ['React', 'Node.js', 'JavaScript', 'TypeScript', 'SQL', 'MongoDB', 'REST', 'AWS', 'Docker'],
+  'Data Analyst': ['SQL', 'Python', 'Tableau', 'Excel', 'PowerBI', 'Pandas', 'Statistics', 'R'],
+  'UI/UX Designer': ['Figma', 'Prototyping', 'Wireframing', 'User Research', 'Design Systems', 'CSS'],
+  'QA Engineer': ['Selenium', 'Cypress', 'Jest', 'API Testing', 'Automation', 'Test Plans', 'Postman'],
+  'DevOps Engineer': ['Docker', 'Kubernetes', 'CI/CD', 'AWS', 'Linux', 'Terraform', 'GitHub Actions'],
+  'Product Manager': ['Roadmapping', 'Agile', 'Scrum', 'User Stories', 'Analytics', 'Wireframing']
+};
+
+export function calculateATSScore(skillsStr = '', role = '') {
+  const reqs = ROLE_REQUIREMENTS[role] || ['Problem Solving', 'Communication', 'Git', 'REST'];
+  if (!skillsStr || !skillsStr.trim()) {
+    return { score: 10, matched: [], missing: reqs.slice(0, 4) };
+  }
+  const candSkills = skillsStr.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+  const matched = [];
+  const missing = [];
+
+  reqs.forEach(req => {
+    const rLower = req.toLowerCase();
+    const found = candSkills.some(cs => cs.includes(rLower) || rLower.includes(cs));
+    if (found) matched.push(req);
+    else missing.push(req);
+  });
+
+  const ratio = matched.length / Math.min(reqs.length, 4);
+  const rawScore = Math.min(98, Math.round(ratio * 100));
+  return {
+    score: Math.max(25, rawScore),
+    matched,
+    missing: missing.slice(0, 5)
+  };
+}
+
+export const EMAIL_TEMPLATES = {
+  interview: (c) => ({
+    title: 'Interview Invitation',
+    subject: `Interview with TalentPulse Team — ${c.role || 'Position'}`,
+    body: `Hi ${c.name ? c.name.split(' ')[0] : 'there'},
+
+Thank you for your interest in the ${c.role || 'role'} position at TalentPulse!
+
+We were very impressed by your profile and experience${c.experience ? ` (${c.experience} years)` : ''}. We would love to invite you for a 30-minute introductory conversation to discuss the role and learn more about your background.
+
+Could you let us know your availability over the next 2-3 business days?
+
+Looking forward to speaking with you!
+
+Warm regards,
+Hiring Team · TalentPulse`
+  }),
+  offer: (c) => ({
+    title: 'Job Offer Letter',
+    subject: `Offer of Employment: ${c.role || 'Position'} at TalentPulse`,
+    body: `Dear ${c.name || 'Candidate'},
+
+On behalf of the entire team, I am delighted to formally offer you the position of ${c.role || 'Team Member'} at TalentPulse!
+
+We believe your expertise and skills will make a significant impact on our product and culture. 
+
+Attached to this email, you will find the formal offer letter outlining the compensation package, benefits, and start date. Please review and sign at your earliest convenience.
+
+Welcome aboard, and congratulations!
+
+Best regards,
+Head of Talent · TalentPulse`
+  }),
+  rejection: (c) => ({
+    title: 'Candidate Feedback / Follow-up',
+    subject: `Application update regarding ${c.role || 'the position'} at TalentPulse`,
+    body: `Dear ${c.name ? c.name.split(' ')[0] : 'Candidate'},
+
+Thank you for taking the time to speak with our team regarding the ${c.role || 'open position'}. We truly enjoyed learning more about your background and accomplishments.
+
+After careful review with our engineering leadership, we have decided to move forward with other candidates whose skillsets align more closely with our immediate requirements at this time.
+
+We will keep your resume on file and reach out if a matching opportunity arises. We wish you the very best in your search!
+
+Sincerely,
+Recruiting Team · TalentPulse`
+  })
+};
+

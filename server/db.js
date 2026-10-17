@@ -39,7 +39,7 @@ CREATE INDEX IF NOT EXISTS idx_hist_cand ON stage_history(candidate_id);
 
 try {
   db.exec(`ALTER TABLE candidates ADD COLUMN rating REAL DEFAULT 4.0`);
-} catch (e) {}
+} catch (e) { }
 
 function seed() {
   const { n } = db.prepare('SELECT COUNT(*) n FROM candidates').get();
