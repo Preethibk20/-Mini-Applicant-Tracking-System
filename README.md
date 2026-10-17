@@ -10,23 +10,6 @@ A high-performance, modern **Applicant Tracking System (ATS)** built with React 
 
 ---
 
-## 📽️ Demo Video & Preview
-
-A full end-to-end interactive video walkthrough of the application was recorded:
-- **Demo Video file:** [`docs/demo/ats_demo_video.webp`](docs/demo/ats_demo_video.webp)
-
-### Key Screenshots
-
-| Executive Dashboard | Hiring Pipeline Kanban |
-|---|---|
-| ![Dashboard](docs/demo/dashboard_view_1792225849812.png) | ![Pipeline Board](docs/demo/pipeline_board_1792225871699.png) |
-
-| Candidate Directory & Search | Candidate Profile & Stage Timeline |
-|---|---|
-| ![Candidate Directory](docs/demo/candidate_directory_1792225916927.png) | ![Candidate Modal](docs/demo/candidate_modal_1792225976889.png) |
-
----
-
 ## 🚀 Key Features
 
 ### 1. 👥 Candidate Management
